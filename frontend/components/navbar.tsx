@@ -12,6 +12,7 @@ import {
   MobileNavToggle,
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function AppNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -24,6 +25,7 @@ export default function AppNavbar() {
   }
 
   const navItems = [
+    { name: "Home", link: "/" },
     { name: "Dashboard", link: "/dashboard" },
     { name: "Predictions", link: "/predictions" },
     { name: "Resources", link: "/resources" },
@@ -35,6 +37,7 @@ export default function AppNavbar() {
         <NavbarLogo />
         <NavItems items={navItems} />
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <NavbarButton href="/signin" variant="secondary">
             Sign In
           </NavbarButton>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import FloatingNavbar from "@/components/floating-navbar"
 import Hero from "@/components/hero"
 import Features from "@/components/features"
 import Cards from "@/components/cards"
@@ -18,15 +17,14 @@ export default function Home() {
   if (!mounted) return null
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <FloatingNavbar />
+    <main className="relative flex min-h-screen flex-col items-center justify-between">
+      <Hero />
       <div className="pt-24">
-        <Hero />
         <Features />
         <Cards />
         <CTA />
         <Footer />
       </div>
-    </div>
+    </main>
   )
 }
