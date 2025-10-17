@@ -5,7 +5,6 @@ import Hero from "@/components/hero"
 import Features from "@/components/features"
 import Cards from "@/components/cards"
 import CTA from "@/components/cta"
-import Footer from "@/components/footer"
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -23,7 +22,6 @@ export default function Home() {
         <Features />
         <Cards />
         <CTA />
-        <Footer />
       </div>
     </main>
   )

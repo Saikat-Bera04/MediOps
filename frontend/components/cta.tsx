@@ -2,8 +2,8 @@
 
 export default function CTA() {
   return (
-    <section id="cta" className="py-20 px-4 sm:px-6 lg:px-8 bg-primary/5">
-      <div className="mx-auto max-w-4xl text-center">
+    <section id="cta" className="w-full py-20 bg-primary/5">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-balance">Ready to Transform Your Hospital?</h2>
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
           Join leading healthcare institutions using HealthHub to predict surges, optimize resources, and provide better

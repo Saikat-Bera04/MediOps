@@ -2,8 +2,8 @@
 
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-muted/30 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+    <footer className="w-full border-t border-border bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12">
+      <div className="w-full px-8 sm:px-12 lg:px-16">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="font-semibold mb-4">Product</h3>

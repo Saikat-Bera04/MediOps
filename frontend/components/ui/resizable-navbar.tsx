@@ -2,6 +2,8 @@
 import { cn } from "@/lib/utils"
 import { IconMenu2, IconX } from "@tabler/icons-react"
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react"
+import { type VariantProps } from "class-variance-authority"
+import { buttonVariants } from "./button"
 
 import React, { useRef, useState } from "react"
 
@@ -23,6 +25,7 @@ interface NavItemsProps {
   }[]
   className?: string
   onItemClick?: () => void
+  pathname: string
 }
 
 interface MobileNavProps {
@@ -97,34 +100,50 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
   )
 }
 
-export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
+export const NavItems = ({ items, className, onItemClick, pathname }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null)
 
   return (
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "flex flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:space-x-2",
+        "flex flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium lg:space-x-2",
         className,
       )}
     >
-      {items.map((item, idx) => (
-        <a
-          onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
-          key={`link-${idx}`}
-          href={item.link}
-        >
-          {hovered === idx && (
-            <motion.div
-              layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800"
-            />
-          )}
-          <span className="relative z-20">{item.name}</span>
-        </a>
-      ))}
+      {items.map((item, idx) => {
+        const isActive = pathname === item.link || 
+                        (item.link !== '/' && pathname.startsWith(item.link))
+        
+        return (
+          <a
+            onMouseEnter={() => setHovered(idx)}
+            onClick={onItemClick}
+            className={cn(
+              "relative px-4 py-2 transition-colors duration-200",
+              isActive 
+                ? "text-foreground font-semibold" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            key={`link-${idx}`}
+            href={item.link}
+          >
+            {hovered === idx && !isActive && (
+              <motion.div
+                layoutId="hovered"
+                className="absolute inset-0 h-full w-full rounded-full bg-accent/10"
+              />
+            )}
+            {isActive && (
+              <motion.div
+                layoutId="active"
+                className="absolute inset-0 h-full w-full rounded-full bg-primary/10"
+              />
+            )}
+            <span className="relative z-20">{item.name}</span>
+          </a>
+        )
+      })}
     </motion.div>
   )
 }
@@ -208,20 +227,22 @@ export const NavbarLogo = () => {
   )
 }
 
-export const NavbarButton = ({
-  href,
-  as: Tag = "a",
-  children,
-  className,
-  variant = "primary",
-  ...props
-}: {
+interface NavbarButtonProps extends VariantProps<typeof buttonVariants> {
   href?: string
   as?: React.ElementType
   children: React.ReactNode
   className?: string
-  variant?: "primary" | "secondary" | "dark" | "gradient"
-} & (React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">)) => {
+}
+
+export const NavbarButton = ({
+  href,
+  as: Tag = "a",
+  children,
+  className = '',
+  variant = "default",
+  size,
+  ...props
+}: NavbarButtonProps) => {
   const baseStyles =
     "px-4 py-2 rounded-md bg-white button bg-white text-black text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center"
 
