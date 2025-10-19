@@ -8,6 +8,16 @@ import AppNavbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import "./globals.css"
 
+// Clerk publishable key - ensure this is set in your environment variables
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+      CLERK_SECRET_KEY: string;
+    }
+  }
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -34,12 +44,12 @@ export default function RootLayout({
       appearance={{
         elements: {
           formButtonPrimary: 'bg-primary hover:bg-primary/90',
-          footerActionLink: 'text-primary hover:text-primary/90',
+          footerActionLink: 'text-primary hover:text-primary/80',
         },
       }}
     >
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`} suppressHydrationWarning>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+        <body className="min-h-screen bg-background font-sans antialiased">
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -47,7 +57,9 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AppNavbar />
-            {children}
+            <main className="min-h-[calc(100vh-4rem)]">
+              {children}
+            </main>
             <Footer />
             <Analytics />
           </ThemeProvider>

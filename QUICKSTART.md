@@ -52,7 +52,7 @@ npm run dev
 
 - **Google Cloud Vision**: Required for OCR. Set up at https://console.cloud.google.com/
 - **Port 5001**: Backend uses 5001 (not 5000) due to macOS conflicts
-- **Clerk Dashboard**: Configure phone verification at https://dashboard.clerk.com/
+ - **Clerk Dashboard**: Configure authentication methods in the Clerk Dashboard. This project uses email/password (no phone/SMS-based sign-in in the UI).
 
 ## 📚 Documentation
 

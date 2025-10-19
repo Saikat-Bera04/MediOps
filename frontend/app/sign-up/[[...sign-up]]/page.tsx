@@ -9,9 +9,16 @@ export default function SignUpPage() {
             formButtonPrimary: 'bg-primary hover:bg-primary/90',
             card: 'shadow-xl',
           },
+          variables: {
+            colorPrimary: '#000000',
+          },
         }}
         routing="path"
         path="/sign-up"
+        signInUrl="/sign-in"
+        afterSignUpUrl="/dashboard"
+        afterSignInUrl="/dashboard"
+        unsafeMetadata={{}}
       />
     </div>
   )
