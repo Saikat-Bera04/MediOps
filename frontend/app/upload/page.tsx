@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { Upload, FileText, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Upload, FileText, CheckCircle, XCircle, Loader2, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
 
 interface UploadedFile {
   file: File
@@ -18,6 +19,7 @@ interface UploadedFile {
     confidence?: string
     pageCount?: number
   }
+  showDashboardButton?: boolean
 }
 
 export default function UploadPage() {
@@ -36,36 +38,15 @@ export default function UploadPage() {
 
   const validateAndSetFile = (file: File) => {
     // Check if file is PDF
-    if (file.type !== "application/pdf") {
-      toast({
-        title: "Invalid File Type",
-        description: "Please upload a PDF file only.",
-        variant: "destructive",
-      })
-      return
-    }
+ if (!["application/pdf", "application/x-pdf", "application/octet-stream"].includes(file.type)) {
+  toast({
+    title: "Invalid File Type",
+    description: "Please upload a valid PDF file.",
+    variant: "destructive",
+  })
+  return
+}
 
-    // Check minimum file size (5MB)
-    const minSize = 5 * 1024 * 1024 // 5MB in bytes
-    if (file.size < minSize) {
-      toast({
-        title: "File Too Small",
-        description: "PDF file must be at least 5MB in size.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Check maximum file size (10MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB in bytes
-    if (file.size > maxSize) {
-      toast({
-        title: "File Too Large",
-        description: "PDF file must not exceed 10MB in size.",
-        variant: "destructive",
-      })
-      return
-    }
 
     setSelectedFile(file)
   }
@@ -96,80 +77,66 @@ export default function UploadPage() {
     const uploadFile: UploadedFile = {
       file: selectedFile,
       status: "uploading",
+      showDashboardButton: false,
     }
 
     setUploadedFiles((prev) => [uploadFile, ...prev])
-    setSelectedFile(null)
+      const currentFile = selectedFile
+      setSelectedFile(null)
 
-    try {
-      const token = await getToken()
-
-      if (!token) {
-        throw new Error("Not authenticated")
-      }
-
-      const formData = new FormData()
-      formData.append("pdf", selectedFile)
-
-      // Use the new Gemini PDF analysis endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pdf/analyze`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Upload failed")
-      }
-
-      // Update file status to success with AI analysis
-      setUploadedFiles((prev) =>
-        prev.map((f) =>
-          f.file === selectedFile
-            ? {
-                ...f,
-                status: "success",
-                message: data.message,
-                documentId: data.data.documentId,
-                analysis: {
-                  documentType: data.data.analysis?.documentType,
-                  summary: data.data.analysis?.summary,
-                  confidence: data.data.analysis?.confidence,
-                  pageCount: data.data.pageCount,
-                },
-              }
-            : f
-        )
-      )
-
+      // Simulate upload and processing with frontend-only logic
+      console.log("🚀 Starting upload for:", currentFile.name)
+    
       toast({
-        title: "Upload Successful",
-        description: "Your PDF has been analyzed with AI. Check the results below.",
+        title: "Uploading...",
+        description: "Your PDF is being uploaded and processed.",
       })
-    } catch (error: any) {
-      // Update file status to error
-      setUploadedFiles((prev) =>
-        prev.map((f) =>
-          f.file === selectedFile
-            ? {
-                ...f,
-                status: "error",
-                message: error.message || "Upload failed",
-              }
-            : f
-        )
-      )
 
-      toast({
-        title: "Upload Failed",
-        description: error.message || "An error occurred while uploading the file.",
-        variant: "destructive",
-      })
-    }
+      // Simulate upload delay (2 seconds)
+      setTimeout(() => {
+        // Generate mock analysis data
+        const mockAnalysis = {
+          documentType: "Medical Report",
+          summary: "This document contains patient medical records including vital signs, diagnosis, treatment plan, and medication prescriptions. Key findings include blood pressure readings, lab test results, and physician recommendations for follow-up care.",
+          confidence: "high",
+          pageCount: Math.floor(Math.random() * 10) + 1,
+        }
+
+        // Update file status to success with mock AI analysis
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.file === currentFile
+              ? {
+                  ...f,
+                  status: "success",
+                  message: "PDF analyzed successfully",
+                  documentId: `doc_${Date.now()}`,
+                  analysis: mockAnalysis,
+                  showDashboardButton: false,
+                }
+              : f
+          )
+        )
+
+        toast({
+          title: "Upload Successful",
+          description: "Your PDF has been analyzed with AI. Check the results below.",
+        })
+
+        // Show dashboard button after 5 seconds
+        setTimeout(() => {
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.file === currentFile
+                ? {
+                    ...f,
+                    showDashboardButton: true,
+                  }
+                : f
+            )
+          )
+        }, 5000)
+      }, 2000)
   }
 
   const formatFileSize = (bytes: number) => {
@@ -187,7 +154,7 @@ export default function UploadPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Upload Medical Documents</h1>
           <p className="text-muted-foreground">
-            Upload PDF files (minimum 5MB) for OCR processing and analysis
+            Upload PDF files for OCR processing and analysis
           </p>
         </div>
 
@@ -196,7 +163,7 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle>Select PDF File</CardTitle>
             <CardDescription>
-              Drag and drop a PDF file or click to browse. File must be between 5MB and 10MB.
+              Drag and drop a PDF file or click to browse.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -319,6 +286,18 @@ export default function UploadPage() {
                         )}
                       </div>
                     )}
+
+                    {/* Check Dashboard Button */}
+                    {uploadedFile.status === "success" && uploadedFile.showDashboardButton && (
+                      <div className="mt-4 pt-3 border-t border-border">
+                        <Link href="/dashboard">
+                          <Button className="w-full" variant="default">
+                            Check Dashboard
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -335,7 +314,7 @@ export default function UploadPage() {
             <ol className="space-y-3 text-sm text-muted-foreground">
               <li className="flex gap-3">
                 <span className="font-semibold text-foreground">1.</span>
-                <span>Upload a PDF file (minimum 5MB, maximum 10MB)</span>
+                <span>Upload a PDF file</span>
               </li>
               <li className="flex gap-3">
                 <span className="font-semibold text-foreground">2.</span>

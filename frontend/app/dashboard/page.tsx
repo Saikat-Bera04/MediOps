@@ -12,35 +12,50 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Loader2, Trash2 } from "lucide-react"
+import { FileText, Loader2, Trash2, Users, Stethoscope, Building2, Activity } from "lucide-react"
 import { getDocuments, deleteDocument, type Document } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 
-const patientVolumeData = [
-  { month: "Jan", predicted: 450, actual: 420 },
-  { month: "Feb", predicted: 520, actual: 510 },
-  { month: "Mar", predicted: 480, actual: 490 },
-  { month: "Apr", predicted: 610, actual: 600 },
-  { month: "May", predicted: 700, actual: 720 },
-  { month: "Jun", predicted: 750, actual: 740 },
+// Hospital: St. Aurora General Hospital Data
+const departmentStaffData = [
+  { department: "Cardiology", doctors: 6, nurses: 12 },
+  { department: "Neurology", doctors: 5, nurses: 10 },
+  { department: "Orthopedics", doctors: 7, nurses: 14 },
+  { department: "Pediatrics", doctors: 8, nurses: 16 },
+  { department: "General Medicine", doctors: 10, nurses: 20 },
+  { department: "Surgery", doctors: 6, nurses: 14 },
 ]
 
-const airQualityData = [
-  { month: "Jan", airQuality: 65, respiratoryCases: 120 },
-  { month: "Feb", airQuality: 58, respiratoryCases: 135 },
-  { month: "Mar", airQuality: 72, respiratoryCases: 95 },
-  { month: "Apr", airQuality: 68, respiratoryCases: 110 },
-  { month: "May", airQuality: 75, respiratoryCases: 85 },
-  { month: "Jun", airQuality: 80, respiratoryCases: 70 },
+const medicineInventoryData = [
+  { month: "Jan", inStock: 450, reorderLevel: 200, consumed: 380 },
+  { month: "Feb", inStock: 420, reorderLevel: 200, consumed: 410 },
+  { month: "Mar", inStock: 480, reorderLevel: 200, consumed: 390 },
+  { month: "Apr", inStock: 510, reorderLevel: 200, consumed: 370 },
+  { month: "May", inStock: 490, reorderLevel: 200, consumed: 400 },
+  { month: "Jun", inStock: 530, reorderLevel: 200, consumed: 360 },
 ]
 
-const alertsData = [
-  { type: "Festival", count: 3, severity: "high" },
-  { type: "Pollution", count: 5, severity: "medium" },
-  { type: "Epidemic", count: 1, severity: "critical" },
+const patientFlowData = [
+  { day: "Mon", opd: 120, emergency: 35, admission: 18 },
+  { day: "Tue", opd: 135, emergency: 28, admission: 15 },
+  { day: "Wed", opd: 128, emergency: 42, admission: 22 },
+  { day: "Thu", opd: 142, emergency: 31, admission: 19 },
+  { day: "Fri", opd: 156, emergency: 38, admission: 21 },
+  { day: "Sat", opd: 98, emergency: 45, admission: 25 },
+  { day: "Sun", opd: 76, emergency: 52, admission: 28 },
+]
+
+const equipmentStatusData = [
+  { equipment: "MRI Scanner", status: "Under Maintenance", technician: "Ms. N. Iyer", priority: "high" },
+  { equipment: "CT Scanner", status: "Operational", technician: "Mr. K. Sharma", priority: "low" },
+  { equipment: "X-Ray Machine 1", status: "Operational", technician: "Ms. P. Singh", priority: "low" },
+  { equipment: "Ventilator 3", status: "Under Repair", technician: "Mr. R. Patel", priority: "critical" },
+  { equipment: "ECG Machine 2", status: "Operational", technician: "Ms. S. Kumar", priority: "low" },
 ]
 
 export default function Dashboard() {
@@ -127,9 +142,9 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">St. Aurora General Hospital</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's your healthcare overview and document processing status.
+            123 Health Ave, Wellness City, 560001 • +91-80-1234-5678 • info@staurora.org
           </p>
         </div>
 
@@ -137,58 +152,70 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="border-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Bed Occupancy</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Staff</CardTitle>
+                <Users className="w-4 h-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">87%</div>
-              <p className="text-xs text-muted-foreground mt-1">+5% from yesterday</p>
+              <div className="text-3xl font-bold text-foreground">184</div>
+              <p className="text-xs text-muted-foreground mt-1">42 Doctors • 86 Nurses • 56 Support</p>
             </CardContent>
           </Card>
 
           <Card className="border-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Available Staff</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Departments</CardTitle>
+                <Building2 className="w-4 h-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">156</div>
-              <p className="text-xs text-muted-foreground mt-1">12 on leave</p>
+              <div className="text-3xl font-bold text-foreground">8</div>
+              <p className="text-xs text-muted-foreground mt-1">All departments operational</p>
             </CardContent>
           </Card>
 
           <Card className="border-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Supply Levels</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Today's OPD</CardTitle>
+                <Stethoscope className="w-4 h-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">92%</div>
-              <p className="text-xs text-muted-foreground mt-1">Masks, Oxygen, Medicines</p>
+              <div className="text-3xl font-bold text-foreground">142</div>
+              <p className="text-xs text-muted-foreground mt-1">31 Emergency • 19 Admissions</p>
             </CardContent>
           </Card>
 
           <Card className="border-border hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Alerts</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Equipment Status</CardTitle>
+                <Activity className="w-4 h-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-destructive">9</div>
-              <p className="text-xs text-muted-foreground mt-1">Festival, Pollution, Epidemic</p>
+              <div className="text-3xl font-bold text-foreground">3</div>
+              <p className="text-xs text-destructive mt-1">Under maintenance/repair</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Patient Volume Chart */}
+          {/* Department Staff Distribution */}
           <Card className="border-border">
             <CardHeader>
-              <CardTitle>Patient Volume Forecast</CardTitle>
-              <CardDescription>Predicted vs Actual patient volume</CardDescription>
+              <CardTitle>Department Staff Distribution</CardTitle>
+              <CardDescription>Doctors and nurses across departments</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={patientVolumeData}>
+                <BarChart data={departmentStaffData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" stroke="var(--color-muted-foreground)" />
+                  <XAxis dataKey="department" stroke="var(--color-muted-foreground)" angle={-45} textAnchor="end" height={100} />
                   <YAxis stroke="var(--color-muted-foreground)" />
                   <Tooltip
                     contentStyle={{
@@ -198,22 +225,22 @@ export default function Dashboard() {
                     }}
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="predicted" stroke="var(--color-primary)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="actual" stroke="var(--color-accent)" strokeWidth={2} />
-                </LineChart>
+                  <Bar dataKey="doctors" fill="var(--color-primary)" name="Doctors" />
+                  <Bar dataKey="nurses" fill="var(--color-accent)" name="Nurses & Support" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Air Quality Chart */}
+          {/* Medicine Inventory Chart */}
           <Card className="border-border">
             <CardHeader>
-              <CardTitle>Air Quality vs Respiratory Cases</CardTitle>
-              <CardDescription>Monthly correlation analysis</CardDescription>
+              <CardTitle>Medicine Inventory Trends</CardTitle>
+              <CardDescription>Stock levels and consumption patterns</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={airQualityData}>
+                <LineChart data={medicineInventoryData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="month" stroke="var(--color-muted-foreground)" />
                   <YAxis stroke="var(--color-muted-foreground)" />
@@ -225,58 +252,139 @@ export default function Dashboard() {
                     }}
                   />
                   <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="airQuality"
-                    fill="var(--color-primary)"
-                    stroke="var(--color-primary)"
-                    fillOpacity={0.3}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="respiratoryCases"
-                    fill="var(--color-accent)"
-                    stroke="var(--color-accent)"
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
+                  <Line type="monotone" dataKey="inStock" stroke="var(--color-primary)" strokeWidth={2} name="In Stock" />
+                  <Line type="monotone" dataKey="reorderLevel" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" name="Reorder Level" />
+                  <Line type="monotone" dataKey="consumed" stroke="var(--color-accent)" strokeWidth={2} name="Consumed" />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Active Alerts */}
+        {/* Patient Flow Chart */}
         <Card className="border-border mb-8">
           <CardHeader>
-            <CardTitle>Active Alerts</CardTitle>
-            <CardDescription>Current health and environmental alerts</CardDescription>
+            <CardTitle>Weekly Patient Flow</CardTitle>
+            <CardDescription>OPD, Emergency, and Admission trends</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={patientFlowData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" />
+                <YAxis stroke="var(--color-muted-foreground)" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "var(--color-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="opd"
+                  stackId="1"
+                  stroke="#3b82f6"
+                  fill="#3b82f6"
+                  fillOpacity={0.6}
+                  name="OPD"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="emergency"
+                  stackId="1"
+                  stroke="#ef4444"
+                  fill="#ef4444"
+                  fillOpacity={0.6}
+                  name="Emergency"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="admission"
+                  stackId="1"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  fillOpacity={0.6}
+                  name="Admissions"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Equipment Status */}
+        <Card className="border-border mb-8">
+          <CardHeader>
+            <CardTitle>Equipment Status & Maintenance</CardTitle>
+            <CardDescription>Current operational status of hospital equipment</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {alertsData.map((alert, idx) => (
+              {equipmentStatusData.map((equipment, idx) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border"
                 >
-                  <div>
-                    <h4 className="font-medium text-foreground">{alert.type}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {alert.count} active alert{alert.count !== 1 ? "s" : ""}
+                  <div className="flex-1">
+                    <h4 className="font-medium text-foreground">{equipment.equipment}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Assigned to: {equipment.technician}
                     </p>
                   </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      alert.severity === "critical"
-                        ? "bg-destructive/20 text-destructive"
-                        : alert.severity === "high"
-                          ? "bg-orange-500/20 text-orange-600"
-                          : "bg-yellow-500/20 text-yellow-600"
-                    }`}
-                  >
-                    {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        equipment.status === "Operational"
+                          ? "bg-green-500/20 text-green-600"
+                          : equipment.priority === "critical"
+                            ? "bg-destructive/20 text-destructive"
+                            : "bg-orange-500/20 text-orange-600"
+                      }`}
+                    >
+                      {equipment.status}
+                    </span>
+                    {equipment.priority !== "low" && (
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          equipment.priority === "critical"
+                            ? "bg-destructive text-destructive-foreground"
+                            : "bg-orange-500 text-white"
+                        }`}
+                      >
+                        {equipment.priority.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Important Notes */}
+        <Card className="border-border mb-8">
+          <CardHeader>
+            <CardTitle>Important Guidelines & Notes</CardTitle>
+            <CardDescription>Hospital operational guidelines</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-sm text-foreground">
+                  <span className="font-semibold">Medicine Reorder:</span> All medicine reorder requests must be raised 30 days before reaching reorder level.
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <p className="text-sm text-foreground">
+                  <span className="font-semibold">Visiting Hours:</span> General wards: 10:00 - 12:00, 17:00 - 19:00. ICU: Restricted access, contact duty nurse.
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm text-foreground">
+                  <span className="font-semibold">Emergency Contacts:</span> Ambulance 1: +91-80-9876-5432 (Available 24x7) • Senior Nurse On-Call: Ms. T. Rao
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -284,7 +392,7 @@ export default function Dashboard() {
         {/* Processed Documents */}
         <Card className="border-border">
           <CardHeader>
-            <CardTitle>Processed Documents</CardTitle>
+            <CardTitle>Processed Medical Documents</CardTitle>
             <CardDescription>
               PDF documents processed with OCR and extracted medical data
             </CardDescription>
