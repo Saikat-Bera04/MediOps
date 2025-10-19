@@ -50,3 +50,13 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+frontend/.clerk/
+
+# Backend specific
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/uploads/
+backend/temp/
+backend/google-credentials.json
+backend/package-lock.json

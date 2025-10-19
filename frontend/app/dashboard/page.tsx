@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { useAuth } from "@clerk/nextjs"
 import {
   LineChart,
   Line,
@@ -13,6 +14,10 @@ import {
   Area,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { FileText, Loader2, Trash2 } from "lucide-react"
+import { getDocuments, deleteDocument, type Document } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 const patientVolumeData = [
   { month: "Jan", predicted: 450, actual: 420 },
@@ -39,14 +44,83 @@ const alertsData = [
 ]
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const { getToken, isLoaded, userId } = useAuth()
+  const { toast } = useToast()
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    if (isLoaded && userId) {
+      fetchDocuments()
     }
-  }, [])
+  }, [isLoaded, userId])
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true)
+      const token = await getToken()
+      if (!token) return
+
+      const response = await getDocuments(token, { limit: 10 })
+      if (response.success && response.data) {
+        setDocuments(response.data.documents)
+      }
+    } catch (error) {
+      console.error("Error fetching documents:", error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (documentId: string) => {
+    try {
+      setDeleting(documentId)
+      const token = await getToken()
+      if (!token) return
+
+      const response = await deleteDocument(token, documentId)
+      if (response.success) {
+        setDocuments((prev) => prev.filter((doc) => doc._id !== documentId))
+        toast({
+          title: "Success",
+          description: "Document deleted successfully",
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting document:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete document",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes"
+    const k = 1024
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted p-4 md:p-8">
@@ -55,7 +129,7 @@ export default function Dashboard() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {user?.name || "User"}. Here's your healthcare overview.
+            Welcome back! Here's your healthcare overview and document processing status.
           </p>
         </div>
 
@@ -172,7 +246,7 @@ export default function Dashboard() {
         </div>
 
         {/* Active Alerts */}
-        <Card className="border-border">
+        <Card className="border-border mb-8">
           <CardHeader>
             <CardTitle>Active Alerts</CardTitle>
             <CardDescription>Current health and environmental alerts</CardDescription>
@@ -204,6 +278,147 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Processed Documents */}
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Processed Documents</CardTitle>
+            <CardDescription>
+              PDF documents processed with OCR and extracted medical data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No documents yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Upload your first PDF document to get started
+                </p>
+                <Button asChild>
+                  <a href="/upload">Upload Document</a>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {documents.map((doc) => (
+                  <div
+                    key={doc._id}
+                    className="p-4 rounded-lg bg-muted/50 border border-border hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <FileText className="w-8 h-8 text-primary mt-1" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground truncate">{doc.fileName}</h4>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+                            <span>{formatFileSize(doc.fileSize)}</span>
+                            <span>•</span>
+                            <span>{formatDate(doc.createdAt)}</span>
+                            {doc.metadata.pageCount && (
+                              <>
+                                <span>•</span>
+                                <span>{doc.metadata.pageCount} pages</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                doc.processingStatus === "completed"
+                                  ? "bg-green-500/20 text-green-600"
+                                  : doc.processingStatus === "processing"
+                                    ? "bg-blue-500/20 text-blue-600"
+                                    : doc.processingStatus === "failed"
+                                      ? "bg-destructive/20 text-destructive"
+                                      : "bg-yellow-500/20 text-yellow-600"
+                              }`}
+                            >
+                              {doc.processingStatus === "completed" && `✓ Completed (${doc.ocrConfidence}% confidence)`}
+                              {doc.processingStatus === "processing" && "⏳ Processing..."}
+                              {doc.processingStatus === "failed" && "✗ Failed"}
+                              {doc.processingStatus === "pending" && "⏸ Pending"}
+                            </span>
+                          </div>
+                          {doc.processingStatus === "completed" && doc.extractedData && (
+                            <div className="mt-3 p-3 bg-background rounded border border-border">
+                              <p className="text-xs font-semibold text-foreground mb-2">
+                                Extracted Information:
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {doc.extractedData.medicalTerms?.length > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">Medical Terms:</span>
+                                    <span className="ml-1 font-medium">
+                                      {doc.extractedData.medicalTerms.slice(0, 3).join(", ")}
+                                      {doc.extractedData.medicalTerms.length > 3 && "..."}
+                                    </span>
+                                  </div>
+                                )}
+                                {doc.extractedData.dates?.length > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">Dates Found:</span>
+                                    <span className="ml-1 font-medium">
+                                      {doc.extractedData.dates.length}
+                                    </span>
+                                  </div>
+                                )}
+                                {doc.extractedData.emails?.length > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">Emails:</span>
+                                    <span className="ml-1 font-medium">
+                                      {doc.extractedData.emails.length}
+                                    </span>
+                                  </div>
+                                )}
+                                {doc.extractedData.phones?.length > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">Phone Numbers:</span>
+                                    <span className="ml-1 font-medium">
+                                      {doc.extractedData.phones.length}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {doc.ocrText && (
+                                <div className="mt-2 pt-2 border-t border-border">
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {doc.ocrText.substring(0, 200)}
+                                    {doc.ocrText.length > 200 && "..."}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {doc.processingStatus === "failed" && doc.errorMessage && (
+                            <p className="mt-2 text-xs text-destructive">{doc.errorMessage}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(doc._id)}
+                        disabled={deleting === doc._id}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        {deleting === doc._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
