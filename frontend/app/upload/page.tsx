@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@clerk/nextjs"
+import { useAuth } from "@/lib/auth-context"
 import { Upload, FileText, CheckCircle, XCircle, Loader2, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ interface UploadedFile {
 }
 
 export default function UploadPage() {
-  const { getToken } = useAuth()
+  const { token } = useAuth()
   const { toast } = useToast()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -72,7 +72,14 @@ export default function UploadPage() {
   }
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFile || !token) {
+      toast({
+        title: "Error",
+        description: "No file selected or not authenticated",
+        variant: "destructive",
+      })
+      return
+    }
 
     const uploadFile: UploadedFile = {
       file: selectedFile,
@@ -81,62 +88,80 @@ export default function UploadPage() {
     }
 
     setUploadedFiles((prev) => [uploadFile, ...prev])
-      const currentFile = selectedFile
-      setSelectedFile(null)
+    const currentFile = selectedFile
+    setSelectedFile(null)
 
-      // Simulate upload and processing with frontend-only logic
-      console.log("🚀 Starting upload for:", currentFile.name)
-    
-      toast({
-        title: "Uploading...",
-        description: "Your PDF is being uploaded and processed.",
+    console.log("🚀 Starting upload for:", currentFile.name)
+
+    toast({
+      title: "Uploading...",
+      description: "Your PDF is being uploaded and analyzed with Gemini AI.",
+    })
+
+    try {
+      const formData = new FormData()
+      formData.append('pdf', currentFile)
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${API_URL}/api/pdf/analyze`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
       })
 
-      // Simulate upload delay (2 seconds)
-      setTimeout(() => {
-        // Generate mock analysis data
-        const mockAnalysis = {
-          documentType: "Medical Report",
-          summary: "This document contains patient medical records including vital signs, diagnosis, treatment plan, and medication prescriptions. Key findings include blood pressure readings, lab test results, and physician recommendations for follow-up care.",
-          confidence: "high",
-          pageCount: Math.floor(Math.random() * 10) + 1,
-        }
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Upload failed')
+      }
 
-        // Update file status to success with mock AI analysis
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.file === currentFile
-              ? {
-                  ...f,
-                  status: "success",
-                  message: "PDF analyzed successfully",
-                  documentId: `doc_${Date.now()}`,
-                  analysis: mockAnalysis,
-                  showDashboardButton: false,
-                }
-              : f
-          )
+      const data = await response.json()
+
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.file === currentFile
+            ? {
+                ...f,
+                status: "success",
+                message: "PDF analyzed successfully",
+                documentId: data.data.documentId,
+                analysis: {
+                  documentType: data.data.analysis?.documentType || 'Medical Document',
+                  summary: data.data.analysis?.summary || data.data.extractedText?.substring(0, 200),
+                  confidence: data.data.analysis?.confidence || 'medium',
+                  pageCount: data.data.pageCount,
+                },
+                showDashboardButton: true,
+              }
+            : f
         )
+      )
 
-        toast({
-          title: "Upload Successful",
-          description: "Your PDF has been analyzed with AI. Check the results below.",
-        })
+      toast({
+        title: "Upload Successful",
+        description: "Your PDF has been analyzed with Gemini AI.",
+      })
+    } catch (error) {
+      console.error("Upload error:", error)
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.file === currentFile
+            ? {
+                ...f,
+                status: "error",
+                message: error instanceof Error ? error.message : 'Upload failed',
+              }
+            : f
+        )
+      )
 
-        // Show dashboard button after 5 seconds
-        setTimeout(() => {
-          setUploadedFiles((prev) =>
-            prev.map((f) =>
-              f.file === currentFile
-                ? {
-                    ...f,
-                    showDashboardButton: true,
-                  }
-                : f
-            )
-          )
-        }, 5000)
-      }, 2000)
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload PDF",
+        variant: "destructive",
+      })
+    }
   }
 
   const formatFileSize = (bytes: number) => {

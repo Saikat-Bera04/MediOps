@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
-import { usePathname } from "next/navigation"
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import {
   Navbar,
   NavBody,
@@ -18,6 +18,8 @@ import { ThemeToggle } from "@/components/theme-toggle"
 export default function AppNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { isAuthenticated, logout } = useAuth()
 
   const isAuthPage = pathname === "/sign-in" || pathname === "/sign-up"
 
@@ -33,6 +35,11 @@ export default function AppNavbar() {
     { name: "Resources", link: "/resources" },
   ]
 
+  const handleLogout = () => {
+    logout()
+    router.push("/sign-in")
+  }
+
   return (
     <Navbar>
       <NavBody>
@@ -40,7 +47,7 @@ export default function AppNavbar() {
         <NavItems items={navItems} pathname={pathname} />
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <SignedOut>
+          {!isAuthenticated ? (
             <NavbarButton 
               href="/sign-in" 
               className="relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -48,10 +55,14 @@ export default function AppNavbar() {
               <span className="relative z-10">Sign In</span>
               <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></span>
             </NavbarButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          ) : (
+            <NavbarButton 
+              onClick={handleLogout}
+              className="relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              <span className="relative z-10">Logout</span>
+            </NavbarButton>
+          )}
         </div>
       </NavBody>
 
@@ -73,17 +84,24 @@ export default function AppNavbar() {
             </a>
           ))}
           <div className="flex w-full flex-col gap-4">
-            <SignedOut>
-              <NavbarButton href="/sign-in" variant="secondary" className="w-full">
-                Sign In
+            {!isAuthenticated ? (
+              <>
+                <NavbarButton href="/sign-in" variant="secondary" className="w-full">
+                  Sign In
+                </NavbarButton>
+                <NavbarButton href="/sign-up" variant="primary" className="w-full">
+                  Sign Up
+                </NavbarButton>
+              </>
+            ) : (
+              <NavbarButton 
+                onClick={handleLogout}
+                variant="destructive" 
+                className="w-full"
+              >
+                Logout
               </NavbarButton>
-              <NavbarButton href="/sign-up" variant="primary" className="w-full">
-                Sign Up
-              </NavbarButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+            )}
           </div>
         </MobileNavMenu>
       </MobileNav>

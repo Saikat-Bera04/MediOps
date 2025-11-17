@@ -8,7 +8,7 @@ yarn.lock
 .env.local
 
 # Google Cloud credentials
-google-credentials.json
+google-vision-credentials.json
 
 # Logs
 logs/
