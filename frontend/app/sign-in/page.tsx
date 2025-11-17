@@ -36,11 +36,22 @@ export default function SignInPage() {
       })
       router.push("/dashboard")
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Login failed",
-        variant: "destructive",
-      })
+      const errorMessage = error instanceof Error ? error.message : "Login failed"
+      
+      // Check if error is specifically about invalid credentials
+      if (errorMessage.toLowerCase().includes("invalid") || errorMessage.toLowerCase().includes("email or password")) {
+        toast({
+          title: "Invalid Credentials",
+          description: "The email or password you entered is incorrect. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Login Error",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }

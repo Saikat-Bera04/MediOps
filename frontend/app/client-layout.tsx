@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { ThemeProvider } from "@/components/theme-provider"
 import AppNavbar from "@/components/navbar"
 import Footer from "@/components/footer"
+import { Toaster } from "@/components/ui/toaster"
 import { Analytics } from "@vercel/analytics/next"
 
 interface ClientLayoutProps {
@@ -25,6 +26,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
           {children}
         </main>
         <Footer />
+        <Toaster />
         <Analytics />
       </ThemeProvider>
     </AuthProvider>

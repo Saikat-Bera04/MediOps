@@ -88,6 +88,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Store token in cookie for middleware (7 days)
       document.cookie = `authToken=${newToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+    } catch (error) {
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -118,6 +120,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Store token in cookie for middleware (7 days)
       document.cookie = `authToken=${newToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
+    } catch (error) {
+      throw error;
     } finally {
       setLoading(false);
     }
