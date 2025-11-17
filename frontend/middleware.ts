@@ -8,8 +8,17 @@ const publicRoutes = [
   '/sign-up',
   '/api/webhooks',
   '/health',
-  '/favicon.ico',
-  '/_next',
+];
+
+// Protected routes that require authentication
+const protectedRoutes = [
+  '/dashboard',
+  '/upload',
+  '/predictions',
+  '/resources',
+  '/profile',
+  '/api/documents',
+  '/api/pdf',
 ];
 
 export function middleware(req: NextRequest) {
@@ -17,9 +26,15 @@ export function middleware(req: NextRequest) {
 
   // Check if the route is public
   const isPublicRoute = publicRoutes.some((route) => 
+    pathname === route || (route !== '/' && pathname.startsWith(route))
+  );
+
+  // Check if route is protected
+  const isProtectedRoute = protectedRoutes.some((route) => 
     pathname === route || pathname.startsWith(route)
   );
 
+  // Allow public routes
   if (isPublicRoute) {
     return NextResponse.next();
   }
@@ -27,10 +42,10 @@ export function middleware(req: NextRequest) {
   // Check for authentication token
   const token = req.cookies.get('authToken')?.value;
 
-  if (!token) {
-    // Redirect to sign-in if not authenticated
+  // If protected route and no token, redirect to sign-in
+  if (isProtectedRoute && !token) {
     const signInUrl = new URL('/sign-in', req.url);
-    signInUrl.searchParams.set('redirect_url', req.url);
+    signInUrl.searchParams.set('redirect_url', pathname);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -41,7 +56,5 @@ export const config = {
   matcher: [
     // Skip Next.js internals and all static files
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    // Include all API routes
-    '/(api|trpc)(.*)',
   ],
 };

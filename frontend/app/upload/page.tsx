@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Upload, FileText, CheckCircle, XCircle, Loader2, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,11 +24,19 @@ interface UploadedFile {
 }
 
 export default function UploadPage() {
-  const { token } = useAuth()
+  const router = useRouter()
+  const { token, isAuthenticated, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/sign-in")
+    }
+  }, [isAuthenticated, authLoading, router])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

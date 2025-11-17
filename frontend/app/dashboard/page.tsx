@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import {
   FileText,
@@ -15,11 +16,19 @@ import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function Dashboard() {
-  const { token, isAuthenticated } = useAuth()
+  const router = useRouter()
+  const { token, isAuthenticated, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/sign-in")
+    }
+  }, [isAuthenticated, authLoading, router])
 
   useEffect(() => {
     if (isAuthenticated && token) {

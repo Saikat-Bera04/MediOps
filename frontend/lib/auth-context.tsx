@@ -85,6 +85,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(newToken);
       setUser({ userId, email: userEmail, firstName, lastName });
       localStorage.setItem('authToken', newToken);
+      
+      // Store token in cookie for middleware (7 days)
+      document.cookie = `authToken=${newToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
     } finally {
       setLoading(false);
     }
@@ -112,6 +115,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(newToken);
       setUser({ userId, email: userEmail, firstName: fName, lastName: lName });
       localStorage.setItem('authToken', newToken);
+      
+      // Store token in cookie for middleware (7 days)
+      document.cookie = `authToken=${newToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict`;
     } finally {
       setLoading(false);
     }
@@ -121,6 +127,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
+    
+    // Remove token cookie
+    document.cookie = 'authToken=; path=/; max-age=0; SameSite=Strict';
   };
 
   return (
