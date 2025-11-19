@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 export interface Document {
   _id: string;
@@ -10,11 +10,34 @@ export interface Document {
   ocrText: string;
   ocrConfidence: number;
   extractedData: {
-    dates: string[];
-    emails: string[];
-    phones: string[];
-    medicalTerms: string[];
-    numbers: string[];
+    documentType?: string;
+    patientInfo?: {
+      name?: string;
+      age?: string | number;
+      gender?: string;
+      id?: string;
+    };
+    medicalConditions?: string[];
+    medications?: {
+      name?: string;
+      dosage?: string;
+      frequency?: string;
+    }[];
+    testResults?: {
+      testName?: string;
+      value?: string | number;
+      unit?: string;
+      referenceRange?: string;
+    }[];
+    dates?: Array<string | { date?: string; context?: string }>;
+    emails?: string[];
+    phones?: string[];
+    medicalTerms?: Array<string | { term?: string; explanation?: string }>;
+    numbers?: Array<string | number>;
+    summary?: string;
+    criticalFindings?: string[];
+    confidence?: string;
+    [key: string]: any;
   };
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
   errorMessage?: string;
@@ -22,6 +45,9 @@ export interface Document {
     pageCount?: number;
     language?: string;
     detectedEntities?: string[];
+    pdfMetadata?: any;
+    processingDate?: string;
+    aiModel?: string;
   };
   createdAt: string;
   updatedAt: string;

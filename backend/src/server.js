@@ -92,8 +92,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server and keep a reference so we can handle listen errors
+const server = app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║                                                        ║
@@ -105,6 +105,23 @@ app.listen(PORT, () => {
 ║                                                        ║
 ╚════════════════════════════════════════════════════════╝
   `);
+});
+
+// Handle listen errors (e.g. EADDRINUSE)
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please free the port or set BACKEND_PORT in your .env to a different port.`);
+    process.exit(1);
+  }
+
+  console.error('Server error:', err);
+  process.exit(1);
+});
+
+// Catch synchronous exceptions we didn't expect
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
 });
 
 // Handle unhandled promise rejections
