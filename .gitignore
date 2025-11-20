@@ -54,9 +54,12 @@ frontend/.clerk/
 
 # Backend specific
 backend/node_modules/
-
+backend/.next/
+backend/out/
+backend/.env/
 backend/.env.local
 backend/uploads/
 backend/temp/
 backend/google-vision-credentials.json
 backend/package-lock.json
+ENV_VARIABLES.md

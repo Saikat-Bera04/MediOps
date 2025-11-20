@@ -24,7 +24,12 @@ yarn-error.log*
 
 # Local env files
 .env
+.env*.local
 
+# Backend specific
+backend/node_modules/
+backend/.next/
+backend/out/
 
 # Clerk configuration (can include secrets)
 .clerk/
