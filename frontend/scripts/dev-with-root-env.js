@@ -47,7 +47,7 @@ function checkPort(port) {
 
 	const env = Object.assign({}, process.env, { PORT: String(portToUse) });
 	console.log(`Starting Next dev on port ${portToUse}`);
-	const child = spawn(nextBin, ['dev'], { stdio: 'inherit', shell: true, env });
+	const child = spawn(nextBin, ['dev'], { stdio: 'inherit', shell: false, env, cwd: path.resolve(__dirname, '..') });
 
 	child.on('close', (code) => process.exit(code));
 })();

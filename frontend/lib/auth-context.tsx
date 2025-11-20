@@ -58,6 +58,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Don't clear token on network errors - might be temporary
+      // Only clear if it's an authentication error (401/403)
+      if (error instanceof Error && error.message.includes('401')) {
+        localStorage.removeItem('authToken');
+        setToken(null);
+      }
     } finally {
       setLoading(false);
     }

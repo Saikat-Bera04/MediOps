@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import { requireAuth } from '../middleware/auth.js';
 import Document from '../models/Document.js';
 import { processPDFWithGemini, askQuestionAboutPDF } from '../services/geminiService.js';
+import { GEMINI_MODEL } from '../utils/geminiConfig.js';
 
 const router = express.Router();
 
@@ -81,7 +82,7 @@ router.post('/analyze', requireAuth, upload.single('pdf'), async (req, res) => {
           pageCount: result.pageCount,
           pdfMetadata: result.pdfMetadata,
           processingDate: result.processingDate,
-          aiModel: 'gemini-2.0-flash-exp',
+          aiModel: GEMINI_MODEL,
         },
       });
 

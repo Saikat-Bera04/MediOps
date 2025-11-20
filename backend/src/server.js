@@ -1,21 +1,39 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import net from 'net';
 import connectDB from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
+import agentRoutes from './routes/agentRoutes.js';
+import predictionRoutes from './routes/predictionRoutes.js';
+import diseaseMedicineRoutes from './routes/diseaseMedicineRoutes.js';
+import { startAqiScheduler } from './jobs/aqiScheduler.js';
 
 // Load environment variables from the repository root .env
 // (when running `cd backend && npm run dev` the working directory is backend/)
 dotenv.config({ path: '../../.env' });
 
+// Set default weather API key if not in .env
+if (!process.env.WEATHER_API_KEY) {
+  process.env.WEATHER_API_KEY = 'd3f36f311e87f456b2c011ac4475c83a';
+}
+
+// Set default Air Visual API key (use from env if provided)
+if (!process.env.AIR_VISUAL_API_KEY) {
+  process.env.AIR_VISUAL_API_KEY = 'ed2e8938-381b-41b5-8afb-23c2fc5fa19c';
+}
+
 // Initialize Express app
 const app = express();
-const PORT = process.env.BACKEND_PORT || process.env.PORT || 5000;
+const PORT = process.env.BACKEND_PORT || process.env.PORT || 5001;
 
 // Connect to MongoDB
 connectDB();
+
+// Start AQI scheduler (updates every 5 minutes)
+startAqiScheduler();
 
 // CORS Configuration
 const corsOptions = {
@@ -65,6 +83,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/predictions', predictionRoutes);
+app.use('/api/disease-medicine', diseaseMedicineRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -92,31 +113,57 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server and keep a reference so we can handle listen errors
-const server = app.listen(PORT, () => {
-  console.log(`
+// Function to find available port
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(startPort, () => {
+      const port = server.address().port;
+      server.close(() => resolve(port));
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        // Try next port
+        findAvailablePort(startPort + 1).then(resolve).catch(reject);
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
+// Start server on available port
+async function startServer() {
+  try {
+    const availablePort = await findAvailablePort(PORT);
+    
+    const server = app.listen(availablePort, () => {
+      console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║                                                        ║
 ║   🏥 Healthcare Backend Server                        ║
 ║                                                        ║
-║   🚀 Server running on port ${PORT}                      ║
+║   🚀 Server running on port ${availablePort}                      ║
 ║   🌍 Environment: ${process.env.NODE_ENV || 'development'}                    ║
-║   📡 API Base URL: http://localhost:${PORT}              ║
+║   📡 API Base URL: http://localhost:${availablePort}              ║
+║   🌤️ Weather API: ${process.env.WEATHER_API_KEY ? '✅ Configured' : '❌ Not configured'}                    ║
 ║                                                        ║
 ╚════════════════════════════════════════════════════════╝
-  `);
-});
+      `);
+    });
 
-// Handle listen errors (e.g. EADDRINUSE)
-server.on('error', (err) => {
-  if (err && err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use. Please free the port or set BACKEND_PORT in your .env to a different port.`);
+    // Handle server errors
+    server.on('error', (err) => {
+      console.error('Server error:', err);
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
+}
 
-  console.error('Server error:', err);
-  process.exit(1);
-});
+startServer();
 
 // Catch synchronous exceptions we didn't expect
 process.on('uncaughtException', (err) => {

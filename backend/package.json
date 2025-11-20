@@ -30,7 +30,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.0",
     "multer": "^1.4.5-lts.1",
-    "pdfjs-dist": "^5.4.296"
+    "node-cron": "^4.2.1",
+    "pdfjs-dist": "^5.4.296",
+    "pdfkit": "^0.17.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
