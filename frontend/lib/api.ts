@@ -320,3 +320,181 @@ export async function chatDiseaseMedicine(
 
   return response.json();
 }
+
+// Resource interfaces
+export interface Resource {
+  _id: string;
+  userId: string;
+  userEmail: string;
+  fileName: string;
+  fileSize: number;
+  processingStatus: 'processing' | 'completed' | 'failed';
+  resourceData: {
+    doctors: Array<{
+      name: string;
+      available_days: string;
+      time: string;
+    }>;
+    nurses: Array<{
+      name: string;
+      available_days: string;
+      time: string;
+    }>;
+    inventory: {
+      medicines: Array<{ name: string; count: number }>;
+      saline: number;
+      injections: number;
+      antibodies: number;
+      ot_rooms: number;
+      general_beds: number;
+      available_nurses_count: number;
+      instruments: Array<{ name: string; count: number }>;
+      ecg_machines: number;
+      ct_scan: number;
+      endoscopy: number;
+      bp_machines: number;
+      ultrasonography: number;
+      xray_machines: number;
+      other_equipment: Array<{ name: string; count: number }>;
+    };
+  };
+  metadata: {
+    pageCount?: number;
+    processingDate?: string;
+    aiModel?: string;
+  };
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResourcesResponse {
+  resources: Resource[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
+/**
+ * Upload a resource PDF file
+ */
+export async function uploadResourcePDF(
+  token: string,
+  file: File
+): Promise<ApiResponse<{
+  resourceId: string;
+  fileName: string;
+  fileSize: number;
+  pageCount: number;
+  resourceData: Resource['resourceData'];
+  processingStatus: string;
+}>> {
+  const formData = new FormData();
+  formData.append('pdf', file);
+
+  const response = await fetch(`${API_URL}/api/resources/upload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  return response.json();
+}
+
+/**
+ * Get all resources for the authenticated user
+ */
+export async function getResources(
+  token: string,
+  params?: {
+    limit?: number;
+    page?: number;
+  }
+): Promise<ApiResponse<ResourcesResponse>> {
+  const queryParams = new URLSearchParams();
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.page) queryParams.append('page', params.page.toString());
+
+  const url = `${API_URL}/api/resources${queryParams.toString() ? `?${queryParams}` : ''}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Get the latest resource
+ */
+export async function getLatestResource(
+  token: string
+): Promise<ApiResponse<Resource>> {
+  const response = await fetch(`${API_URL}/api/resources/latest`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Get a specific resource by ID
+ */
+export async function getResource(
+  token: string,
+  resourceId: string
+): Promise<ApiResponse<Resource>> {
+  const response = await fetch(`${API_URL}/api/resources/${resourceId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Delete a resource
+ */
+export async function deleteResource(
+  token: string,
+  resourceId: string
+): Promise<ApiResponse<void>> {
+  const response = await fetch(`${API_URL}/api/resources/${resourceId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Get aggregated resources (all resources merged together)
+ */
+export async function getAggregatedResources(
+  token: string
+): Promise<ApiResponse<{
+  doctors: Array<{ name: string; available_days: string; time: string }>;
+  nurses: Array<{ name: string; available_days: string; time: string }>;
+  inventory: Resource['resourceData']['inventory'];
+  resources: Array<{ _id: string; fileName: string; createdAt: string; updatedAt: string }>;
+}>> {
+  const response = await fetch(`${API_URL}/api/resources/aggregated`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}

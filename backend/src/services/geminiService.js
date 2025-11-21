@@ -268,3 +268,147 @@ ${message}
     throw new Error(`AI agent failed: ${error.message}`);
   }
 }
+
+/**
+ * Analyze resource PDF content using Gemini AI
+ * Extracts structured hospital resource data (doctors, nurses, inventory, equipment)
+ * @param {string} text - Extracted text from PDF via OCR
+ * @returns {Promise<Object>} Structured resource data
+ */
+export async function analyzeResourcePDF(text) {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const prompt = `
+You are an advanced medical-document analysis assistant. 
+
+Your task is to read the extracted text from a hospital inventory or daily resource report and return a clean, structured JSON summary.
+
+From the text, extract and identify the following:
+
+1. Doctor Information:
+   - Doctor names
+   - Their weekly availability (days + timings if mentioned)
+
+2. Nurse Information:
+   - Nurse names
+   - Weekly availability (days + timings if available)
+
+3. Inventory Count:
+   - Medicines (list each medicine and count)
+   - Saline (count)
+   - Injections (count)
+   - Antibodies (count)
+   - OT Rooms (count)
+   - General Beds (count)
+   - Available Nurses (count if provided)
+   - Medical Instruments (list + count)
+   - ECG Machines (count)
+   - CT Scan Machines (count)
+   - Endoscopy Machines (count)
+   - Blood Pressure Management Machines (count)
+   - Ultrasonography Machines (count)
+   - X-Ray Machines (count)
+   - Any additional medical equipment mentioned (list + count)
+
+4. Other Resources:
+   - Any additional hospital facility or resource mentioned.
+
+Return all results strictly in the following JSON structure:
+
+{
+  "doctors": [
+    { "name": "", "available_days": "", "time": "" }
+  ],
+  "nurses": [
+    { "name": "", "available_days": "", "time": "" }
+  ],
+  "inventory": {
+    "medicines": [{ "name": "", "count": 0 }],
+    "saline": 0,
+    "injections": 0,
+    "antibodies": 0,
+    "ot_rooms": 0,
+    "general_beds": 0,
+    "available_nurses_count": 0,
+    "instruments": [{ "name": "", "count": 0 }],
+    "ecg_machines": 0,
+    "ct_scan": 0,
+    "endoscopy": 0,
+    "bp_machines": 0,
+    "ultrasonography": 0,
+    "xray_machines": 0,
+    "other_equipment": [{ "name": "", "count": 0 }]
+  }
+}
+
+If any field is missing from the document, set its value to null or 0.
+
+Do NOT infer or guess anything. Only use information present in the text.
+
+Extracted Text:
+${text}
+`;
+
+    const result = await withRetry(
+      async () => await model.generateContent(prompt),
+      { maxRetries: 3, initialDelay: 2000, maxDelay: 60000 }
+    );
+    const response = await result.response;
+    const rawText = response.text().trim();
+
+    // Try to parse JSON from the response
+    let resourceData;
+    try {
+      // Remove markdown code blocks if present
+      const jsonText = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      resourceData = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.warn('Could not parse Gemini resource analysis as JSON, attempting to fix...');
+      // Try to extract JSON from the response
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          resourceData = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.error('Failed to parse resource data:', e);
+          throw new Error('Failed to parse resource data from AI response');
+        }
+      } else {
+        throw new Error('No valid JSON found in AI response');
+      }
+    }
+
+    // Validate and normalize the structure
+    const normalizedData = {
+      doctors: Array.isArray(resourceData.doctors) ? resourceData.doctors : [],
+      nurses: Array.isArray(resourceData.nurses) ? resourceData.nurses : [],
+      inventory: {
+        medicines: Array.isArray(resourceData.inventory?.medicines) ? resourceData.inventory.medicines : [],
+        saline: resourceData.inventory?.saline ?? 0,
+        injections: resourceData.inventory?.injections ?? 0,
+        antibodies: resourceData.inventory?.antibodies ?? 0,
+        ot_rooms: resourceData.inventory?.ot_rooms ?? 0,
+        general_beds: resourceData.inventory?.general_beds ?? 0,
+        available_nurses_count: resourceData.inventory?.available_nurses_count ?? 0,
+        instruments: Array.isArray(resourceData.inventory?.instruments) ? resourceData.inventory.instruments : [],
+        ecg_machines: resourceData.inventory?.ecg_machines ?? 0,
+        ct_scan: resourceData.inventory?.ct_scan ?? 0,
+        endoscopy: resourceData.inventory?.endoscopy ?? 0,
+        bp_machines: resourceData.inventory?.bp_machines ?? 0,
+        ultrasonography: resourceData.inventory?.ultrasonography ?? 0,
+        xray_machines: resourceData.inventory?.xray_machines ?? 0,
+        other_equipment: Array.isArray(resourceData.inventory?.other_equipment) ? resourceData.inventory.other_equipment : [],
+      },
+    };
+
+    return normalizedData;
+  } catch (error) {
+    console.error('Error analyzing resource PDF with Gemini:', error);
+    throw new Error(`Resource analysis failed: ${error.message}`);
+  }
+}

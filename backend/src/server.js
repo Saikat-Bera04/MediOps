@@ -9,6 +9,7 @@ import pdfRoutes from './routes/pdfRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
 import diseaseMedicineRoutes from './routes/diseaseMedicineRoutes.js';
+import resourceRoutes from './routes/resourceRoutes.js';
 import { startAqiScheduler } from './jobs/aqiScheduler.js';
 
 // Load environment variables from the repository root .env
@@ -86,6 +87,7 @@ app.use('/api/pdf', pdfRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/disease-medicine', diseaseMedicineRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // 404 handler
 app.use((req, res) => {
