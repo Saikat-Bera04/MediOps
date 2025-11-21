@@ -27,7 +27,7 @@ if (!process.env.AIR_VISUAL_API_KEY) {
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.BACKEND_PORT || process.env.PORT || 5001;
+const PORT = process.env.BACKEND_PORT || process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
@@ -40,7 +40,7 @@ const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-      : ['http://localhost:3000', 'http://localhost:3001'];
+      : ['http://localhost:3000', 'http://localhost:3001', 'https://medi-ops-ten.vercel.app' ];
     
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

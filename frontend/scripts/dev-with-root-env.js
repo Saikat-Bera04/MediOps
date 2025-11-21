@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 // Start next dev — pick the first available port among preferredPort..preferredPort+2
-const nextBin = path.resolve(__dirname, '..', 'node_modules', '.bin', 'next');
+const nextBin = path.resolve(__dirname, '..', 'node_modules', 'next', 'dist', 'bin', 'next');
 const preferredPort = parseInt(process.env.FRONTEND_PORT || process.env.PORT || '3000', 10);
 const maxTries = 3;
 const net = require('net');
@@ -47,7 +47,7 @@ function checkPort(port) {
 
 	const env = Object.assign({}, process.env, { PORT: String(portToUse) });
 	console.log(`Starting Next dev on port ${portToUse}`);
-	const child = spawn(nextBin, ['dev'], { stdio: 'inherit', shell: false, env, cwd: path.resolve(__dirname, '..') });
+	const child = spawn('node', [nextBin, 'dev'], { stdio: 'inherit', shell: false, env, cwd: path.resolve(__dirname, '..') });
 
 	child.on('close', (code) => process.exit(code));
 })();

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-  "dev": "node ./scripts/dev-with-root-env.js",
+    "dev": "node ./scripts/dev-with-root-env.js",
     "lint": "eslint .",
     "start": "next start"
   },
@@ -60,6 +60,7 @@
     "react-day-picker": "^9.8.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.54.0",
+    "react-is": "^19.2.0",
     "react-native": "^0.75.0",
     "react-resizable-panels": "^2.0.18",
     "recharts": "^3.3.0",
