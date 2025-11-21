@@ -209,78 +209,185 @@ export default function Dashboard() {
                             </span>
                           </div>
                           {doc.processingStatus === "completed" && doc.extractedData && (
-                            <div className="mt-3 p-3 bg-background rounded border border-border">
+                            <div className="mt-3 p-4 bg-background rounded border border-border space-y-3">
                               <p className="text-xs font-semibold text-foreground mb-3">
-                                Extracted Information:
+                                Extracted Medical Information:
                               </p>
-                              <div className="space-y-2 text-xs">
-                                {doc.extractedData.medicalTerms?.length > 0 && (
-                                  <div>
-                                    <p className="text-muted-foreground font-medium">Medical Terms ({doc.extractedData.medicalTerms.length}):</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {doc.extractedData.medicalTerms.map((term, idx) => {
-                                        const termText = typeof term === 'string' ? term : term?.term || JSON.stringify(term);
+                              
+                              {/* Hospital Name */}
+                              {doc.extractedData.hospitalName && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-1">Hospital:</p>
+                                  <p className="text-sm font-semibold text-foreground">{doc.extractedData.hospitalName}</p>
+                                </div>
+                              )}
+                              
+                              {/* Patient Details */}
+                              {(doc.extractedData.patientInfo || doc.extractedData.patientName) && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-2">Patient Details:</p>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    {(doc.extractedData.patientInfo?.name || doc.extractedData.patientName) && (
+                                      <div><span className="text-muted-foreground">Name:</span> <span className="text-foreground font-medium">{doc.extractedData.patientInfo?.name || doc.extractedData.patientName}</span></div>
+                                    )}
+                                    {(doc.extractedData.patientInfo?.age || doc.extractedData.patientAge) && (
+                                      <div><span className="text-muted-foreground">Age:</span> <span className="text-foreground font-medium">{doc.extractedData.patientInfo?.age || doc.extractedData.patientAge}</span></div>
+                                    )}
+                                    {(doc.extractedData.patientInfo?.gender || doc.extractedData.patientGender) && (
+                                      <div><span className="text-muted-foreground">Gender:</span> <span className="text-foreground font-medium">{doc.extractedData.patientInfo?.gender || doc.extractedData.patientGender}</span></div>
+                                    )}
+                                    {(doc.extractedData.patientInfo?.id || doc.extractedData.patientId) && (
+                                      <div><span className="text-muted-foreground">ID:</span> <span className="text-foreground font-medium">{doc.extractedData.patientInfo?.id || doc.extractedData.patientId}</span></div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Doctor Name */}
+                              {(doc.extractedData.doctorName || doc.extractedData.physicianName) && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-1">Doctor:</p>
+                                  <p className="text-sm font-semibold text-foreground">{doc.extractedData.doctorName || doc.extractedData.physicianName}</p>
+                                </div>
+                              )}
+                              
+                              {/* Diagnosis Details */}
+                              {(doc.extractedData.diagnosis || (doc.extractedData.medicalConditions && doc.extractedData.medicalConditions.length > 0)) && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-2">Diagnosis & Conditions:</p>
+                                  {doc.extractedData.diagnosis && (
+                                    <p className="text-xs text-foreground mb-2">{doc.extractedData.diagnosis}</p>
+                                  )}
+                                  {doc.extractedData.medicalConditions && doc.extractedData.medicalConditions.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {doc.extractedData.medicalConditions.map((condition, idx) => {
+                                        const condText = typeof condition === 'string' ? condition : (condition as any)?.name || JSON.stringify(condition);
                                         return (
-                                          <span key={idx} className="bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
-                                            {termText}
+                                          <span key={idx} className="bg-red-500/10 text-red-600 px-2 py-1 rounded text-xs">
+                                            {condText}
                                           </span>
                                         );
                                       })}
                                     </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Medications/Medicines */}
+                              {doc.extractedData.medications && doc.extractedData.medications.length > 0 && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-2">Medications:</p>
+                                  <div className="space-y-2">
+                                    {doc.extractedData.medications.map((med, idx) => {
+                                      const medName = typeof med === 'string' ? med : (med as any)?.name || JSON.stringify(med);
+                                      const medDosage = typeof med === 'string' ? '' : (med as any)?.dosage;
+                                      const medFreq = typeof med === 'string' ? '' : (med as any)?.frequency;
+                                      return (
+                                        <div key={idx} className="text-xs bg-emerald-500/10 p-2 rounded">
+                                          <p className="text-foreground font-semibold">{medName}</p>
+                                          {medDosage && <p className="text-muted-foreground">Dosage: {medDosage}</p>}
+                                          {medFreq && <p className="text-muted-foreground">Frequency: {medFreq}</p>}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
-                                )}
-                                {doc.extractedData.dates?.length > 0 && (
-                                  <div>
-                                    <p className="text-muted-foreground font-medium">Dates Found ({doc.extractedData.dates.length}):</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {doc.extractedData.dates.map((date, idx) => {
-                                        const dateText = typeof date === 'string' ? date : date?.date || JSON.stringify(date);
-                                        return (
-                                          <span key={idx} className="bg-green-500/10 text-green-600 px-2 py-1 rounded text-xs">
-                                            {dateText}
-                                          </span>
-                                        );
-                                      })}
+                                </div>
+                              )}
+                              
+                              {/* Test Results */}
+                              {doc.extractedData.testResults && doc.extractedData.testResults.length > 0 && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-2">Test Results:</p>
+                                  <div className="space-y-1">
+                                    {doc.extractedData.testResults.map((test, idx) => (
+                                      <div key={idx} className="text-xs bg-blue-500/10 p-2 rounded">
+                                        <p className="text-foreground font-semibold">{(test as any)?.testName || 'Test'}</p>
+                                        <p className="text-muted-foreground">Value: {(test as any)?.value} {(test as any)?.unit || ''}</p>
+                                        {(test as any)?.referenceRange && <p className="text-muted-foreground">Ref: {(test as any)?.referenceRange}</p>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Visit Dates */}
+                              {doc.extractedData.dates && doc.extractedData.dates.length > 0 && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-1">Dates:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {doc.extractedData.dates.map((date, idx) => {
+                                      const dateText = typeof date === 'string' ? date : (date as any)?.date || JSON.stringify(date);
+                                      return (
+                                        <span key={idx} className="bg-green-500/10 text-green-600 px-2 py-1 rounded text-xs">
+                                          {dateText}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Contact Information */}
+                              {((doc.extractedData.emails && doc.extractedData.emails.length > 0) || (doc.extractedData.phones && doc.extractedData.phones.length > 0)) && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-2">Contact Information:</p>
+                                  {doc.extractedData.emails && doc.extractedData.emails.length > 0 && (
+                                    <div className="mb-2">
+                                      <p className="text-xs text-muted-foreground">Emails:</p>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {doc.extractedData.emails.map((email, idx) => {
+                                          const emailText = typeof email === 'string' ? email : (email as any)?.email || JSON.stringify(email);
+                                          return (
+                                            <span key={idx} className="bg-purple-500/10 text-purple-600 px-2 py-1 rounded text-xs break-all">
+                                              {emailText}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
-                                {doc.extractedData.emails?.length > 0 && (
-                                  <div>
-                                    <p className="text-muted-foreground font-medium">Emails ({doc.extractedData.emails.length}):</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {doc.extractedData.emails.map((email, idx) => {
-                                        const emailText = typeof email === 'string' ? email : email?.email || JSON.stringify(email);
-                                        return (
-                                          <span key={idx} className="bg-purple-500/10 text-purple-600 px-2 py-1 rounded text-xs break-all">
-                                            {emailText}
-                                          </span>
-                                        );
-                                      })}
+                                  )}
+                                  {doc.extractedData.phones && doc.extractedData.phones.length > 0 && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Phones:</p>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {doc.extractedData.phones.map((phone, idx) => {
+                                          const phoneText = typeof phone === 'string' ? phone : (phone as any)?.phone || JSON.stringify(phone);
+                                          return (
+                                            <span key={idx} className="bg-orange-500/10 text-orange-600 px-2 py-1 rounded text-xs">
+                                              {phoneText}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
                                     </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Medical Terms */}
+                              {doc.extractedData.medicalTerms && doc.extractedData.medicalTerms.length > 0 && (
+                                <div className="pb-3 border-b border-border">
+                                  <p className="text-xs text-muted-foreground font-medium mb-1">Medical Terms Identified:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {doc.extractedData.medicalTerms.map((term, idx) => {
+                                      const termText = typeof term === 'string' ? term : (term as any)?.term || JSON.stringify(term);
+                                      return (
+                                        <span key={idx} className="bg-cyan-500/10 text-cyan-600 px-2 py-1 rounded text-xs">
+                                          {termText}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
-                                )}
-                                {doc.extractedData.phones?.length > 0 && (
-                                  <div>
-                                    <p className="text-muted-foreground font-medium">Phone Numbers ({doc.extractedData.phones.length}):</p>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {doc.extractedData.phones.map((phone, idx) => {
-                                        const phoneText = typeof phone === 'string' ? phone : phone?.phone || JSON.stringify(phone);
-                                        return (
-                                          <span key={idx} className="bg-orange-500/10 text-orange-600 px-2 py-1 rounded text-xs">
-                                            {phoneText}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
+                              
+                              {/* Full Text Preview */}
                               {doc.ocrText && (
-                                <div className="mt-3 pt-3 border-t border-border">
+                                <div className="pt-2">
                                   <p className="text-xs font-semibold text-foreground mb-1">Full Text Preview:</p>
-                                  <p className="text-xs text-muted-foreground line-clamp-3 whitespace-pre-wrap">
-                                    {doc.ocrText.substring(0, 300)}
-                                    {doc.ocrText.length > 300 && "..."}
+                                  <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap bg-muted/50 p-2 rounded">
+                                    {doc.ocrText.substring(0, 250)}
+                                    {doc.ocrText.length > 250 && "..."}
                                   </p>
                                 </div>
                               )}
