@@ -498,3 +498,188 @@ export async function getAggregatedResources(
 
   return response.json();
 }
+
+// ======================== ALLOCATION INTERFACES ========================
+
+export interface PatientInfo {
+  name?: string;
+  age?: string;
+  gender?: string;
+  id?: string;
+  contactNumber?: string;
+  email?: string;
+}
+
+export interface PrescriptionDetails {
+  doctorName?: string;
+  medicines?: Array<{
+    name?: string;
+    dosage?: string;
+    frequency?: string;
+    duration?: string;
+  }>;
+  diagnosis?: string;
+  visitDate?: string;
+}
+
+export interface AllocatedResources {
+  beds?: {
+    bedType: string; // 'general', 'icu', 'isolation'
+    bedNumber?: string;
+    quantity: number;
+    allocatedDate?: Date;
+  };
+  oxygenCylinders?: {
+    quantity: number;
+    allocatedDate?: Date;
+  };
+  dialysis?: {
+    sessions: number;
+    frequency: string;
+    allocatedDate?: Date;
+  };
+  otherServices?: Array<{
+    serviceName: string;
+    serviceType: string;
+    quantity: number;
+    allocatedDate?: Date;
+  }>;
+}
+
+export interface Allocation {
+  _id: string;
+  userId: string;
+  userEmail: string;
+  documentId: string;
+  patientInfo: PatientInfo;
+  prescriptionDetails: PrescriptionDetails;
+  allocatedResources: AllocatedResources;
+  status: 'pending' | 'allocated' | 'deallocated' | 'completed';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ======================== ALLOCATION API FUNCTIONS ========================
+
+/**
+ * Create a new allocation with resources
+ */
+export async function createAllocation(
+  token: string,
+  payload: {
+    documentId: string;
+    patientInfo: PatientInfo;
+    prescriptionDetails: PrescriptionDetails;
+    allocatedResources: AllocatedResources;
+    notes?: string;
+  }
+): Promise<ApiResponse<{ allocationId: string; allocation: Allocation; lowStockAlerts: any[] }>> {
+  const response = await fetch(`${API_URL}/api/allocations`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response.json();
+}
+
+/**
+ * Get all allocations for the user
+ */
+export async function getAllocations(
+  token: string,
+  params?: {
+    limit?: number;
+    page?: number;
+    status?: string;
+  }
+): Promise<ApiResponse<{ allocations: Allocation[]; pagination: { total: number; page: number; limit: number; pages: number } }>> {
+  const queryParams = new URLSearchParams();
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.page) queryParams.append('page', params.page.toString());
+  if (params?.status) queryParams.append('status', params.status);
+
+  const url = `${API_URL}/api/allocations${queryParams.toString() ? `?${queryParams}` : ''}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Get a specific allocation
+ */
+export async function getAllocation(
+  token: string,
+  allocationId: string
+): Promise<ApiResponse<Allocation>> {
+  const response = await fetch(`${API_URL}/api/allocations/${allocationId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Update an allocation status
+ */
+export async function updateAllocation(
+  token: string,
+  allocationId: string,
+  payload: { status?: string; notes?: string }
+): Promise<ApiResponse<Allocation>> {
+  const response = await fetch(`${API_URL}/api/allocations/${allocationId}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response.json();
+}
+
+/**
+ * Deallocate/delete resources
+ */
+export async function deallocateResources(
+  token: string,
+  allocationId: string
+): Promise<ApiResponse<Allocation>> {
+  const response = await fetch(`${API_URL}/api/allocations/${allocationId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+
+/**
+ * Check stock levels
+ */
+export async function checkStockLevels(
+  token: string
+): Promise<ApiResponse<{ lowStockItems: any[]; inventory: any; hasLowStock: boolean }>> {
+  const response = await fetch(`${API_URL}/api/allocations/check-stock`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+}
+

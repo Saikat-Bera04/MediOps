@@ -8,11 +8,14 @@ import {
   Trash2,
   Download,
   Eye,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { getDocuments, deleteDocument, type Document } from "@/lib/api"
+import { getDocuments, deleteDocument, getAllocations, deallocateResources, checkStockLevels, type Document } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { ResourceAllocationForm } from "@/components/resource-allocation-form"
 import Link from "next/link"
 
 export default function Dashboard() {
@@ -20,8 +23,12 @@ export default function Dashboard() {
   const { token, isAuthenticated, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const [documents, setDocuments] = useState<Document[]>([])
+  const [allocations, setAllocations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [allocationLoading, setAllocationLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [selectedDocForAllocation, setSelectedDocForAllocation] = useState<string | null>(null)
+  const [lowStockItems, setLowStockItems] = useState<any[]>([])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -33,6 +40,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchDocuments()
+      fetchAllocations()
+      checkStock()
     }
   }, [isAuthenticated, token])
 
@@ -79,6 +88,70 @@ export default function Dashboard() {
       })
     } finally {
       setDeleting(null)
+    }
+  }
+
+  const fetchAllocations = async () => {
+    try {
+      setAllocationLoading(true)
+      if (!token) return
+
+      const response = await getAllocations(token, { limit: 20 })
+      if (response.success && response.data) {
+        setAllocations(response.data.allocations)
+      }
+    } catch (error) {
+      console.error("Error fetching allocations:", error)
+    } finally {
+      setAllocationLoading(false)
+    }
+  }
+
+  const checkStock = async () => {
+    try {
+      if (!token) return
+
+      const response = await checkStockLevels(token)
+      if (response.success && response.data?.lowStockItems) {
+        setLowStockItems(response.data.lowStockItems)
+
+        if (response.data.lowStockItems.length > 0) {
+          const itemsList = response.data.lowStockItems
+            .slice(0, 3)
+            .map((item: any) => `${item.item}: ${item.count}`)
+            .join(", ")
+
+          toast({
+            title: "⚠️ Low Stock Alert",
+            description: `${itemsList}${response.data.lowStockItems.length > 3 ? " and more" : ""}`,
+            variant: "destructive",
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Error checking stock:", error)
+    }
+  }
+
+  const handleDeallocate = async (allocationId: string) => {
+    try {
+      if (!token) return
+
+      const response = await deallocateResources(token, allocationId)
+      if (response.success) {
+        await fetchAllocations()
+        toast({
+          title: "Success",
+          description: "Resources deallocated successfully",
+        })
+      }
+    } catch (error) {
+      console.error("Error deallocating:", error)
+      toast({
+        title: "Error",
+        description: "Failed to deallocate resources",
+        variant: "destructive",
+      })
     }
   }
 
@@ -398,20 +471,182 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(doc._id)}
-                        disabled={deleting === doc._id}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        {deleting === doc._id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
+                      <div className="flex gap-2">
+                        {doc.processingStatus === "completed" && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => setSelectedDocForAllocation(doc._id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Allocate
+                          </Button>
                         )}
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(doc._id)}
+                          disabled={deleting === doc._id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          {deleting === doc._id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Low Stock Alerts */}
+        {lowStockItems.length > 0 && (
+          <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20 mt-8 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-600">
+                <AlertCircle className="w-5 h-5" />
+                Low Stock Alert
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {lowStockItems.map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-background rounded border border-orange-200 dark:border-orange-800">
+                    <div className="text-sm">
+                      <p className="font-medium text-foreground">{item.item}</p>
+                      <p className="text-xs text-muted-foreground">Current: {item.count} (Threshold: {item.threshold})</p>
+                    </div>
+                    <AlertCircle className="w-4 h-4 text-orange-600" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Resource Allocation Form */}
+        {selectedDocForAllocation && token && (
+          <div className="mt-8 mb-8">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedDocForAllocation(null)}
+              className="mb-4"
+            >
+              Cancel Allocation
+            </Button>
+            {documents.find(d => d._id === selectedDocForAllocation) && (
+              <ResourceAllocationForm
+                document={documents.find(d => d._id === selectedDocForAllocation)!}
+                token={token}
+                onSuccess={() => {
+                  setSelectedDocForAllocation(null)
+                  fetchAllocations()
+                  checkStock()
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Allocated Resources */}
+        <Card className="border-border mt-8">
+          <CardHeader>
+            <CardTitle>Allocated Resources</CardTitle>
+            <CardDescription>Hospital resources allocated to patients</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {allocationLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : allocations.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No allocations yet</h3>
+                <p className="text-sm text-muted-foreground">Upload prescriptions and allocate resources for patients</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allocations.map((allocation: any) => (
+                  <div
+                    key={allocation._id}
+                    className="p-4 rounded-lg bg-muted/50 border border-border hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground">
+                            {allocation.patientInfo?.name || "Unknown Patient"}
+                          </h4>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            allocation.status === 'allocated' ? 'bg-green-500/20 text-green-600' :
+                            allocation.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
+                            'bg-red-500/20 text-red-600'
+                          }`}>
+                            {allocation.status === 'allocated' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                            {allocation.status.charAt(0).toUpperCase() + allocation.status.slice(1)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Age: {allocation.patientInfo?.age || "N/A"} | Gender: {allocation.patientInfo?.gender || "N/A"}
+                        </p>
+                      </div>
+                      {allocation.status === 'allocated' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeallocate(allocation._id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          Deallocate
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="mt-3 p-3 bg-background rounded border border-border space-y-2">
+                      <p className="text-xs font-semibold text-foreground mb-2">Allocated Resources:</p>
+                      
+                      {allocation.allocatedResources?.beds && (
+                        <div className="text-xs">
+                          <p className="text-muted-foreground">
+                            <span className="font-medium">Beds:</span> {allocation.allocatedResources.beds.quantity}x {allocation.allocatedResources.beds.bedType}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {allocation.allocatedResources?.oxygenCylinders?.quantity > 0 && (
+                        <div className="text-xs">
+                          <p className="text-muted-foreground">
+                            <span className="font-medium">Oxygen Cylinders:</span> {allocation.allocatedResources.oxygenCylinders.quantity}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {allocation.allocatedResources?.dialysis && allocation.allocatedResources.dialysis.sessions > 0 && (
+                        <div className="text-xs">
+                          <p className="text-muted-foreground">
+                            <span className="font-medium">Dialysis:</span> {allocation.allocatedResources.dialysis.sessions} sessions ({allocation.allocatedResources.dialysis.frequency})
+                          </p>
+                        </div>
+                      )}
+
+                      {allocation.prescriptionDetails?.doctorName && (
+                        <div className="text-xs">
+                          <p className="text-muted-foreground">
+                            <span className="font-medium">Doctor:</span> {allocation.prescriptionDetails.doctorName}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Allocated: {new Date(allocation.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 ))}
               </div>
